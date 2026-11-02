@@ -14,15 +14,15 @@ extend-immutable-calls = ["renderer_client.RenderOptions"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["main.py", "miner", "sn17gen"]
+files = ["main.py", "miner"]
 
 [tool.poetry]
-name = "404-base-miner"
+name = "404-sft-miner"
 version = "0.1.0"
 description = ""
 authors = []
 readme = "README.md"
-packages = [{ include = "miner" }, { include = "sn17gen" }]
+packages = [{ include = "miner" }]
 
 [tool.poetry.dependencies]
 python = ">=3.13,<3.14"
@@ -47,6 +47,7 @@ bandit = "1.9.2"
 black = "26.10.1"
 mypy = "2.4.0"
 ruff = "0.17.3"
+pytest = "*"
 
 [tool.poe.tasks.lint]
 help = "Run all linters and formatters"

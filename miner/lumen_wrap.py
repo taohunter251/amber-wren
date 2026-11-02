@@ -1,10 +1,19 @@
+"""lumen-kit's post-processing for versions C and D (owner 30/10: "add lumen-kit's post-processing to ver C and D"),
+copied from the round-0 leader research-somthing-t/lumen-kit @3594fd1a sn17gen/jsutil.py (no licence file; public
+contest submission, read in competition/cache). WRAP, FLAT, wrap and final are verbatim (typed here).
+
+    wrap   the module's generate becomes __inner; a new generate puts its object in a pivot group (rotation rx, ry), then
+           re-centers it and scales its largest side to 0.99. Every render of a module in C/D renders wrap(module), as
+           lumen-kit's checks, refine sheets and panel do; the model only ever sees and edits the unwrapped module.
+    final  wrap + a 15 degree tilt toward the camera (rotation x 0.261799 rad) of a flat object: one whose height is
+           under half of its larger horizontal side. lumen-kit returns final(best) without rendering it.
+"""
+
 from __future__ import annotations
 
 import re
 
-_FENCE = re.compile(r"```(?:[a-zA-Z]+)?\s*\n(.*?)```", re.DOTALL)
 _EXPORT = re.compile(r"export\s+default\s+function\s*([A-Za-z_$][\w$]*)?\s*\(\s*THREE\s*\)")
-_CODE_START = ("function", "const", "let", "var", "export", "//", "/*", "'use", '"use')
 
 WRAP = """
 export default function generate(THREE) {
@@ -44,33 +53,23 @@ export default function generate(THREE) {
 }
 """
 
+FLAT = (
+    "  pivot.updateMatrixWorld(true);\n"
+    "  const box0 = new THREE.Box3().setFromObject(pivot);\n"
+    "  const size0 = new THREE.Vector3();\n"
+    "  box0.getSize(size0);\n"
+    "  if (size0.y < 0.5 * Math.max(size0.x, size0.z)) pivot.rotation.set(0.261799, 0, 0);\n"
+)
 
-def extract(text: str | None) -> str | None:
-    if not text:
-        return None
-    blocks = [b for b in _FENCE.findall(text) if "export default" in b]
-    src = max(blocks, key=len) if blocks else text
-    if "export default" not in src:
-        return None
-    lines = src.strip().splitlines()
-    while lines and not lines[0].lstrip().startswith(_CODE_START):
-        lines.pop(0)
-    return "\n".join(lines).strip() or None
+NO_EXPORT = "the module must contain `export default function generate(THREE)`"  # lumen-kit's error for wrap -> None
 
 
 def wrap(js: str, ry: str = "0", rx: str = "0") -> str | None:
     m = _EXPORT.search(js)
     if not m or "__inner" in js:
         return None
-    inner = js[:m.start()] + "function __inner(THREE)" + js[m.end():]
+    inner = js[: m.start()] + "function __inner(THREE)" + js[m.end() :]
     return inner.rstrip() + "\n" + WRAP % {"rx": rx, "ry": ry}
-
-
-FLAT = ("  pivot.updateMatrixWorld(true);\n"
-        "  const box0 = new THREE.Box3().setFromObject(pivot);\n"
-        "  const size0 = new THREE.Vector3();\n"
-        "  box0.getSize(size0);\n"
-        "  if (size0.y < 0.5 * Math.max(size0.x, size0.z)) pivot.rotation.set(0.261799, 0, 0);\n")
 
 
 def final(js: str) -> str | None:
