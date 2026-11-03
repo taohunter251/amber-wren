@@ -46,9 +46,9 @@ from miner import rewrite_prompts as P
 from miner.rewrite import Calls, check, code_of, finish, first_module, image_part, refine_content, text_part
 
 # The chains in order: (draft model, draft effort). The first is the pick's fallback and wins ties.
-DRAFTS: tuple[tuple[str, str], ...] = ((pipeline.ASTRA, "medium"), (pipeline.MODEL, "medium"))
+DRAFTS: tuple[tuple[str, str], ...] = ((pipeline.ASTRA, "medium"),)
 # The rewrites of every chain in order: (model, effort). Owner 30/10: the first on Sol high (was Astra medium).
-REWRITES: tuple[tuple[str, str], ...] = ((pipeline.MODEL, "high"), (pipeline.ASTRA, "high"))
+REWRITES: tuple[tuple[str, str], ...] = ((pipeline.MODEL, "high"),)
 PICK_MODEL, PICK_EFFORT, PICK_MAX_OUTPUT = pipeline.ASTRA, "low", 8192
 POST_STAGES = ((pipeline.MODEL, 1, False), (pipeline.ASTRA, 2, True))  # refines after the pick: model, step of the refine text, colour line first
 POST_STEPS = 3
@@ -135,8 +135,8 @@ async def pick(calls: Calls, photo: dict[str, str], modules: list[str]) -> str:
     return sheets[best][0]
 
 
-async def generate(image: bytes, seed: int, witness: AsyncWitnessClient) -> str | None:
-    calls = Calls(witness)
+async def generate(image: bytes, seed: int, witness: AsyncWitnessClient, spent: tuple[float, int] = (0.0, 0)) -> str | None:
+    calls = Calls(witness, spent)
     photo = image_part(images.photo_data_url(image))
     finals = [await chain(calls, photo, model, effort) for model, effort in DRAFTS]
     accepted = [m for m, ok in finals if ok]

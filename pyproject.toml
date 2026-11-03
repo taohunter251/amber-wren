@@ -14,20 +14,24 @@ extend-immutable-calls = ["renderer_client.RenderOptions"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["main.py", "miner"]
+files = ["main.py", "miner", "sn17gen"]
 
 [tool.poetry]
-name = "404-sft-miner"
+name = "404-base-miner"
 version = "0.1.0"
 description = ""
 authors = []
 readme = "README.md"
-packages = [{ include = "miner" }]
+packages = [{ include = "miner" }, { include = "sn17gen" }]
 
 [tool.poetry.dependencies]
 python = ">=3.13,<3.14"
-404-witness-client = { path = "../404-sdk/witness-client" }
-404-renderer-client = { path = "../404-sdk/renderer-client" }
+404-witness-client = [
+    { url = "https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_witness_client-0.2.17-py3-none-macosx_13_0_arm64.whl#sha256=29c6a541d64aa5152153cef173873f8a44340a26ceb5d6beb530ba11b74a009d", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'" },
+    { url = "https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_witness_client-0.2.17-py3-none-manylinux_2_34_x86_64.whl#sha256=70a7fda820edaa90d109817ac671487a3ac6a053ae0bb9b17991fe858671adfd", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
+]
+404-miner-runtime = { url = "https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_miner_runtime-0.1.5-py3-none-any.whl#sha256=db3f70f71b25f57bd06030bb637ee2e643b3a60849d541074d9da7e15ddc6f0c" }
+404-renderer-client = { url = "https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_renderer_client-0.1.4-py3-none-any.whl#sha256=35b1b77efe479a18713a0d817bd60749089cc7d0725c1738edbbcd8caccaa4fa" }
 tlslite-ng = "==0.8.2"
 cryptography = "==50.0.2"
 httpx = "==0.28.1"
@@ -47,7 +51,6 @@ bandit = "1.9.2"
 black = "26.10.1"
 mypy = "2.4.0"
 ruff = "0.17.3"
-pytest = "*"
 
 [tool.poe.tasks.lint]
 help = "Run all linters and formatters"

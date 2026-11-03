@@ -35,6 +35,9 @@ DRAFT_EFFORT, REWRITE_EFFORT = "medium", "high"
 REWRITES = 2
 MAX_REPAIRS = pipeline.MAX_REPAIRS
 CALL_IDS = 100  # call k sends request_ids k*100+1, ... (its resends included)
+FIRST_CALL = 20  # the other family's request_ids stay below 2000
+PICK_RESERVE = 100_000  # the final pick's calls
+MIN_ROOM = 14_000  # output tokens worth a call: above the high refines seen at the 95th percentile
 # The judge's 4 front views in golden217's order: front-left, front-right, from below, from above (= the pick's tiles)
 VIEWS = pipeline.TILE_VIEWS
 # Owner 29/10: image configurations as in the base miner (detail auto). Both leaders send detail high (a later option).
@@ -50,9 +53,9 @@ def _estimate(instructions: str, content: list[dict[str, str]]) -> int:
 class Calls:
     """The prompt's calls so far (versions C, D): each a fresh Conversation with the budget the earlier ones left."""
 
-    def __init__(self, witness: AsyncWitnessClient) -> None:
+    def __init__(self, witness: AsyncWitnessClient, spent: tuple[float, int] = (0.0, 0)) -> None:
         self.witness = witness
-        self.credits, self.calls, self.k = 0.0, 0, 0
+        self.credits, self.calls, self.k = spent[0] + PICK_RESERVE, spent[1] + 8, FIRST_CALL
 
     async def ask(
         self,
@@ -62,6 +65,12 @@ class Calls:
         instructions: str = P.SYSTEM,
         max_output: int | None = None,
     ) -> tuple[str, str | None]:
+        estimate = _estimate(instructions, content)
+        if max_output is None:  # size the call to the money left; a cut reply keeps the previous module
+            left = pipeline.BUDGET_CREDITS - self.credits - pipeline.credits(model, estimate, 0)
+            room = int(left / pipeline.credits(model, 0, 1))
+            if room >= MIN_ROOM:
+                max_output = min(room, pipeline.MAX_OUTPUT_TOKENS[model])
         chat = pipeline.Conversation(
             self.witness,
             content,
